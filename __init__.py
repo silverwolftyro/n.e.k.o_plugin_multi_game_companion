@@ -356,6 +356,52 @@ class MultiGameCompanionPlugin(NekoPluginBase):
             }
         )
 
+    @plugin_entry(
+        id="capture_screen",
+        name=tr("entries.capture_screen.name", default="捕获屏幕"),
+        description=tr(
+            "entries.capture_screen.description",
+            default="读取宿主推给模型的最近屏幕帧，用于 OCR 识别。",
+        ),
+        metadata={"result_kind": "event"},
+        input_schema={
+            "type": "object",
+            "properties": {
+                "max_count": {
+                    "type": "integer",
+                    "description": "最多读取几帧，默认 2，上限 4",
+                    "default": 2,
+                }
+            },
+        },
+    )
+    async def capture_screen(self, *, max_count: int = 2, **_):
+        # 只读 frames，不写日志、不外传
+        limit = max(1, min(int(max_count), 4))
+        try:
+            frames = await self.bus.frames.get(max_count=limit)
+        except Exception as exc:
+            return Err(SdkError(f"bus.frames 不可用: {type(exc).__name__}"))
+
+        if isinstance(frames, Err):
+            return frames
+        if isinstance(frames, Ok):
+            frames = frames.value
+
+        records = list(frames)
+        return Ok({
+            "count": len(records),
+            "frames": [
+                {
+                    "source": getattr(item, "source", None),
+                    "mime": getattr(item, "mime", None),
+                    "captured_at": getattr(item, "captured_at", None),
+                    "has_image": bool(getattr(item, "image_base64", None)),
+                }
+                for item in records
+            ],
+        })
+
     # ==================================================================
     # 宿主消息：P1 的"每 N 轮重推一次语境"
     # ==================================================================

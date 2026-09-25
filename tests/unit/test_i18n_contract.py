@@ -251,7 +251,7 @@ def test_i18n__terms_keys_complete(messages: dict[str, str]) -> None:
 
 @pytest.mark.static
 def test_i18n__entry_and_tool_keys_complete(messages: dict[str, str]) -> None:
-    assert len([key for key in messages if key.startswith("entries.")]) == 9
+    assert len([key for key in messages if key.startswith("entries.")]) == 11
     assert len([key for key in messages if key.startswith("tools.")]) == 4
 
 
@@ -264,7 +264,7 @@ def test_i18n__no_placeholder_like_todo(messages: dict[str, str]) -> None:
 
 @pytest.mark.static
 def test_i18n__total_key_count(messages: dict[str, str]) -> None:
-    assert len(messages) == 45
+    assert len(messages) == 47
 
 
 # =============================================================================
@@ -284,7 +284,7 @@ def test_i18n__default_args_match_zh_cn_values(
         checked += 1
         if messages.get(site.key) != site.default:
             drifted.append(f"{site.module}:{site.lineno} {site.key}")
-    assert checked == 13, checked  # 4 个入口 name+description(8) + set_game 参数(1) + 2 个工具(4)
+    assert checked == 15, checked  # 5 个入口 name+description(10) + set_game 参数(1) + 2 个工具(4)
     assert drifted == []
 
 

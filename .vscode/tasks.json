@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "N.E.K.O: check multi_game_companion",
+      "type": "shell",
+      "command": "uv run neko-plugin check multi_game_companion",
+      "options": {
+        "cwd": "${config:nekoPlugin.repoRoot}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "N.E.K.O: sync multi_game_companion",
+      "type": "shell",
+      "command": "uv run --with pip neko-plugin sync multi_game_companion --clean",
+      "options": {
+        "cwd": "${config:nekoPlugin.repoRoot}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "N.E.K.O: check -r multi_game_companion",
+      "type": "shell",
+      "command": "uv run neko-plugin check -r multi_game_companion",
+      "options": {
+        "cwd": "${config:nekoPlugin.repoRoot}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "N.E.K.O: build multi_game_companion",
+      "type": "shell",
+      "command": "uv run neko-plugin build multi_game_companion",
+      "options": {
+        "cwd": "${config:nekoPlugin.repoRoot}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

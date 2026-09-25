@@ -10,6 +10,8 @@
   "entries.refresh_game_context.description": "把当前游戏的语境重新送进对话，长对话里语境变淡时用。",
   "entries.capture_screen.name": "捕获屏幕",
   "entries.capture_screen.description": "读取宿主推给模型的最近屏幕帧，用于 OCR 识别。",
+  "entries.ocr_screen.name": "识别屏幕文字",
+  "entries.ocr_screen.description": "读取屏幕帧做 OCR，与当前游戏术语库匹配后返回 matched_terms 列表。当用户问'屏幕上是什么''我在干嘛'时调用；不要拿返回值联网搜索，不要复述数字，不要反复调用。",
 
   "tools.set_current_game.description": "当用户提到自己正在玩某款游戏时调用，登记当前游戏，之后的陪聊会使用该游戏的语境与术语。",
   "tools.set_current_game.param.game": "游戏名称，可以是用户原话里的说法。",

@@ -27,6 +27,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import threading
 from collections.abc import Mapping
 from typing import Any
@@ -58,6 +59,7 @@ from .session import (
     SessionPersistence,
     SwitchResult,
 )
+from .ocr_engine import OcrEngine
 from .term_store import TermEntry, TermLibrary, TermLoadError, load_library
 
 
@@ -85,6 +87,7 @@ class MultiGameCompanionPlugin(NekoPluginBase):
         # 分属不同线程，跨线程锁里 await 会把某个循环线程整条堵死。
         self._state_lock = threading.Lock()
         self._config_ready = False
+        self._ocr = OcrEngine(self.plugin_id, self.logger)
 
     # ==================================================================
     # i18n：全部用户可见文案的唯一出口
@@ -155,6 +158,8 @@ class MultiGameCompanionPlugin(NekoPluginBase):
     @lifecycle(id="startup")
     async def startup(self, **_: Any) -> Any:
         await self._reload_config()
+        # 后台预热 OCR，不阻塞启动
+        asyncio.create_task(self._ocr.warmup_async())
         result = await self._manager.restore(self._registry)
         if result is None:
             self.logger.info("multi_game_companion: started, no current game")
@@ -192,6 +197,7 @@ class MultiGameCompanionPlugin(NekoPluginBase):
     @lifecycle(id="shutdown")
     async def shutdown(self, **_: Any) -> Any:
         self._manager.unload()
+        self._ocr.close()
         self.logger.info("multi_game_companion: shutdown")
         return Ok({"status": "stopped"})
 
@@ -379,7 +385,9 @@ class MultiGameCompanionPlugin(NekoPluginBase):
         # 只读 frames，不写日志、不外传
         limit = max(1, min(int(max_count), 4))
         try:
-            frames = await self.bus.frames.get(max_count=limit)
+            frames = await asyncio.to_thread(
+                self.bus.frames.get, max_count=limit
+            )
         except Exception as exc:
             return Err(SdkError(f"bus.frames 不可用: {type(exc).__name__}"))
 
@@ -400,6 +408,74 @@ class MultiGameCompanionPlugin(NekoPluginBase):
                 }
                 for item in records
             ],
+        })
+
+    @plugin_entry(
+        id="ocr_screen",
+        name=tr("entries.ocr_screen.name", default="识别屏幕文字"),
+        description=tr(
+            "entries.ocr_screen.description",
+            default="读取屏幕帧做 OCR，与当前游戏术语库匹配后返回 matched_terms 列表。当用户问'屏幕上是什么''我在干嘛'时调用；不要拿返回值联网搜索，不要复述数字，不要反复调用。",
+        ),
+        metadata={"result_kind": "event"},
+        input_schema={
+            "type": "object",
+            "properties": {
+                "max_count": {
+                    "type": "integer",
+                    "description": "最多处理几帧，默认 1，上限 2",
+                    "default": 1,
+                }
+            },
+        },
+    )
+    async def ocr_screen(self, *, max_count: int = 1, **_):
+        limit = max(1, min(int(max_count), 2))
+        try:
+            frames = await asyncio.to_thread(
+                self.bus.frames.get, max_count=limit
+            )
+        except Exception as exc:
+            return Err(SdkError(f"bus.frames 不可用: {type(exc).__name__}"))
+
+        if isinstance(frames, Err):
+            return frames
+        if isinstance(frames, Ok):
+            frames = frames.value
+
+        records = list(frames)
+        ocr_parts = []
+        for item in records:
+            b64 = getattr(item, "image_base64", None) or ""
+            if b64:
+                text = await self._ocr.extract_text_from_base64(b64)
+                if text:
+                    ocr_parts.append(text)
+
+        combined = "\n".join(ocr_parts)
+        ocr_chars = len(combined)
+
+        session = self._manager.current
+        game_id = session.game_id if session else None
+        matched: list[str] = []
+        library = self._manager.library
+        if library is not None and combined:
+            for entry in library.by_key.values():
+                if len(matched) >= 10:
+                    break
+                if entry.key in combined:
+                    matched.append(entry.key)
+                    continue
+                for alias in entry.aliases:
+                    if alias in combined:
+                        matched.append(entry.key)
+                        break
+
+        return Ok({
+            "count": len(records),
+            "game": game_id,
+            "matched_terms": matched[:10],
+            "ocr_chars": ocr_chars,
         })
 
     # ==================================================================

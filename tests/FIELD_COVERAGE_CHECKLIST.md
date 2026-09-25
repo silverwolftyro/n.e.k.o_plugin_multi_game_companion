@@ -1,8 +1,44 @@
 # multi_game_companion · 字段覆盖测试清单（L1 MVP）
 
-> 状态：**设计稿，尚未写测试代码**
-> 对应实现阶段：`term_store.py` / `session.py` / `context_pack.py` / `__init__.py`
-> 产出顺序：先按本清单写测试骨架 → 再写业务实现 → 跑 `check` + `pytest`
+> 状态：**实现已落地并通过**（设计稿仍是本文件；逐条对照见下方"实现状态与偏差"）
+> 对应实现：`game_registry.py` / `term_store.py` / `session.py` / `context_pack.py` / `__init__.py`
+> 运行：`cd plugin/plugins/multi_game_companion && python -m pytest tests -q`
+
+---
+
+## 实现状态与偏差（读本清单前先看这里）
+
+| 项 | 落地情况 |
+|---|---|
+| A 节配置键（33 个） | 全部被生产代码读取；`tests/unit/test_game_registry.py` 与 `tests/integration/test_plugin_entries.py` 逐键断言"改了行为就变" |
+| B 节维度与目录一致 | 直跑随包分发的真实 `terms/` 树；含"反向一致"（无孤儿目录）与"未知维度文件被忽略" |
+| C 节字段与两层合并 | 覆盖层按 key **逐字段**合并；`notes` 刻意不读（保证不泄露）；`source` 只进查询返回体 |
+| D 节验收与 push 契约 | 全部落地；`push_message` 的 kwargs 被断言为**精确等于** `{source, visibility, ai_behavior, parts, priority, metadata}` |
+| E 节红线（22 条） | 全部落地为 `tests/static/test_redlines.py`（参数化）。扫描对象是**去掉注释与 docstring 的 AST**——否则"本插件不涉及 extension / [plugin.host]"这类说明文字会把红线自己点红 |
+| I 节 i18n（18 条） | 全部落地；45 个键双向一致，`tr(default=)` 与 JSON 逐字相同 |
+| F 节 marker | 已写入本插件 `pyproject.toml [tool.pytest.ini_options]`（含 `asyncio_mode = "auto"`，从插件目录直接跑即可） |
+
+**刻意偏离本清单的三处（都是有据的修正）**
+
+1. **`{key}` 占位符改为 `{term}`**。`PluginI18n.t(self, key, *, locale, default, **params)` 的第一个形参
+   就叫 `key`，因此任何 `{key}` 占位符都拿不到实参、永远渲染成字面量（实测 TypeError）。
+   `context.term_line` 与 `lookup.entry_line` 已改为 `{term}`，并有专项用例
+   `test_i18n__no_reserved_placeholder_names` 守住这类坑。
+2. **I-14 的期望与 SDK 现实不符**。`locale_candidates` 的顺序是 请求 locale → 其主语言 →
+   `default_locale` → 其主语言 → `"en"`；本插件声明 `default_locale = "zh-CN"`，
+   所以未知 locale **会**落到中文默认串。这是 SDK 契约（默认语言由插件自己声明），
+   不是泄露。用例改为断言"落到声明的默认语言；完全没有 bundle 时落到 `default=` / 键名"。
+3. **A-28 重推机制的计数源不是 `bus`**。E-22 要求完全不读 `self.bus`，而 `bus.messages`
+   记录的是插件→宿主的推送、并非用户轮次。因此 P1 用
+   `@message(id="on_chat_message", source="chat")` 计数（正是 A-28 所写的
+   "读它的模块：`__init__.py`（P1 `@message`）"）。宿主若不派发该消息，行为是
+   "永不重推"（fail-safe），不会刷屏。
+
+**未决风险（无法由代码解决）**
+
+- `terms/**.toml` 里仍有 `TODO(verify)`：术语内容需由熟悉该游戏的人校对（G-06 是盘点命令，不是用例）。
+- `[plugin.author].name` 仍是 `TODO`，发布前必填（`test_manifest__author_is_filled_at_release` 已 xfail 待转绿）。
+- git remote 未配置 —— `check` 的第 1 条 warning。
 
 ---
 

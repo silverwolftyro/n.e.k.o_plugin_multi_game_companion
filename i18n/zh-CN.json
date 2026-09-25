@@ -24,15 +24,15 @@
   "errors.internal": "插件内部出错了，可以稍后再试一次。",
 
   "context.title": "【当前陪聊游戏】{game}",
-  "context.title_switched": "【当前陪聊游戏】{game}（已从 {previous} 切换）",
+  "context.title_switched": "【当前陪聊游戏】{game}（已从{previous}切换）",
   "context.tone": "口吻：{tone}",
   "context.terms_header": "常用术语：",
-  "context.term_line": "- {key}：{brief}",
+  "context.term_line": "- {term}：{brief}",
   "context.no_terms": "（这款游戏暂未提供常驻术语，可调用 lookup_game_term 查询。）",
   "context.hint": "需要更细的术语（角色/机制/黑话）时，调用 lookup_game_term 查询。",
 
   "lookup.found_header": "找到 {count} 条相关术语：",
-  "lookup.entry_line": "【{key}】（{kind}）{brief}",
+  "lookup.entry_line": "【{term}】（{kind}）{brief}",
   "lookup.slang_label": "相关说法：",
   "lookup.avoid_label": "注意不要说：",
   "lookup.not_found": "当前游戏「{game}」里没有查到相关术语。可以换个说法，或者先确认它是不是这款游戏里的东西。",

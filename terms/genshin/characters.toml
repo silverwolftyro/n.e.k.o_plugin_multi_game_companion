@@ -1,30 +1,192 @@
 # =============================================================================
 # terms/genshin/characters.toml —— 原神 · 角色
 # -----------------------------------------------------------------------------
-# 角色条目不进语境块，只在 lookup_game_term 被调用时按需返回。
-# 因此可以写得比 core.toml 详细一些（但 brief 仍建议 ≤80 字）。
+# 生成源：miao-plugin resources/meta-gs/character/data.json（125 名角色，含 3 名主角）
+# 字段来源（逐字段可追溯，无人工猜测）：
+#   key     = data.json 的 name
+#   kind    = 固定 "角色"
+#   brief   = elem + weapon 直译（pyro→火 … anemo→风；sword→单手剑 … polearm→长枪）
+#   aliases = data.json 的 abbr（仅当 abbr ≠ name）+ 七神称号
+#   slang/avoid = 脚手架阶段已人工校对的内容，原样保留
 #
-# ⚠️ TODO(verify): 以下条目为结构示例，需由熟悉原神的同事校对后再上线；
-#    尤其是「元素 + 武器类型」这两项，写错会直接暴露。
+# 选取规则（38 条）：
+#   5★ 23 条 = 七神 6 位必收 + 其余按上线时间（eta）从早到晚补齐
+#              + 1 处人工替换：八重神子 替换 埃洛伊（2026-09-25 按用户决定）
+#   4★ 12 条 = 上线时间最早的 12 位（开服四星即家喻户晓那批）
+#   主角 3 条 = 空／荧／旅行者：elem = multi 写不出单一元素，
+#              不套用 elem+weapon 模板，用通用描述单列在文件末尾
+#   ⚠️ 「上线早」只是资历/知名度的代理指标，不是实测人气；若有人气数据请替换。
+#
+# 角色条目不进语境块，只在 lookup_game_term 被调用时按需返回。
 # =============================================================================
 
-[terms."雷电将军"]
+[terms."温迪"]
 kind = "角色"
-brief = "雷元素单手剑角色，靠元素爆发提供雷附着与全队增伤。"
-aliases = ["雷神", "影", "Raiden Shogun"]
-slang = ["雷神劈了", "开大"]
-avoid = "不要写成『雷电将军是法师』——她使用单手剑"
-# TODO(verify): 增伤机制的准确表述与当前版本强度定位
+brief = "风元素弓角色"
+aliases = ["风神"]
 
 [terms."钟离"]
 kind = "角色"
-brief = "岩元素长枪角色，以护盾与减抗见长。"
-aliases = ["岩王帝君", "帝君", "Zhongli"]
+brief = "岩元素长枪角色"
+aliases = ["岩神", "岩王帝君", "帝君", "Zhongli"]
 slang = ["钟离盾"]
-# TODO(verify): 护盾与减抗的具体数值口径
+
+[terms."雷电将军"]
+kind = "角色"
+brief = "雷元素长枪角色"
+aliases = ["雷神", "影", "Raiden Shogun"]
+slang = ["雷神劈了", "开大"]
+avoid = "不要写成『雷电将军使用单手剑』——索引里她的武器类型是长枪（polearm）"
+
+[terms."纳西妲"]
+kind = "角色"
+brief = "草元素法器角色"
+aliases = ["草神"]
+
+[terms."芙宁娜"]
+kind = "角色"
+brief = "水元素单手剑角色"
+aliases = ["水神"]
+
+[terms."玛薇卡"]
+kind = "角色"
+brief = "火元素双手剑角色"
+aliases = ["火神"]
+
+[terms."琴"]
+kind = "角色"
+brief = "风元素单手剑角色"
+
+[terms."迪卢克"]
+kind = "角色"
+brief = "火元素双手剑角色"
+
+[terms."七七"]
+kind = "角色"
+brief = "冰元素单手剑角色"
+
+[terms."莫娜"]
+kind = "角色"
+brief = "水元素法器角色"
+
+[terms."刻晴"]
+kind = "角色"
+brief = "雷元素单手剑角色"
+
+[terms."可莉"]
+kind = "角色"
+brief = "火元素法器角色"
+
+[terms."达达利亚"]
+kind = "角色"
+brief = "水元素弓角色"
+aliases = ["公子"]
+
+[terms."阿贝多"]
+kind = "角色"
+brief = "岩元素单手剑角色"
+
+[terms."甘雨"]
+kind = "角色"
+brief = "冰元素弓角色"
+
+[terms."魈"]
+kind = "角色"
+brief = "风元素长枪角色"
 
 [terms."胡桃"]
 kind = "角色"
-brief = "火元素长枪角色，以低血量高爆发著称。"
+brief = "火元素长枪角色"
 aliases = ["Hu Tao"]
-# TODO(verify): 完整机制描述、命座关键节点、当前版本配队
+
+[terms."优菈"]
+kind = "角色"
+brief = "冰元素双手剑角色"
+
+[terms."枫原万叶"]
+kind = "角色"
+brief = "风元素单手剑角色"
+aliases = ["万叶"]
+
+[terms."神里绫华"]
+kind = "角色"
+brief = "冰元素单手剑角色"
+aliases = ["绫华"]
+
+[terms."宵宫"]
+kind = "角色"
+brief = "火元素弓角色"
+
+[terms."珊瑚宫心海"]
+kind = "角色"
+brief = "水元素法器角色"
+aliases = ["心海"]
+
+[terms."八重神子"]
+kind = "角色"
+brief = "雷元素法器角色"
+aliases = ["神子"]
+
+[terms."丽莎"]
+kind = "角色"
+brief = "雷元素法器角色"
+
+[terms."芭芭拉"]
+kind = "角色"
+brief = "水元素法器角色"
+
+[terms."凯亚"]
+kind = "角色"
+brief = "冰元素单手剑角色"
+
+[terms."雷泽"]
+kind = "角色"
+brief = "雷元素双手剑角色"
+
+[terms."安柏"]
+kind = "角色"
+brief = "火元素弓角色"
+
+[terms."香菱"]
+kind = "角色"
+brief = "火元素长枪角色"
+
+[terms."北斗"]
+kind = "角色"
+brief = "雷元素双手剑角色"
+
+[terms."行秋"]
+kind = "角色"
+brief = "水元素单手剑角色"
+
+[terms."凝光"]
+kind = "角色"
+brief = "岩元素法器角色"
+
+[terms."菲谢尔"]
+kind = "角色"
+brief = "雷元素弓角色"
+
+[terms."班尼特"]
+kind = "角色"
+brief = "火元素单手剑角色"
+
+[terms."诺艾尔"]
+kind = "角色"
+brief = "岩元素双手剑角色"
+
+# —— 主角（可变元素，不套用上面的 elem+weapon 模板）——
+# 索引里 elem = multi，没有单一元素可写；brief 用通用描述，不编造元素。
+# 名字全来自索引的 name（abbr 与 name 相同，故无 aliases）。
+
+[terms."旅行者"]
+kind = "角色"
+brief = "可变元素的主角"
+
+[terms."空"]
+kind = "角色"
+brief = "可变元素的主角"
+
+[terms."荧"]
+kind = "角色"
+brief = "可变元素的主角"

@@ -1,6 +1,44 @@
 # 多游戏陪玩
 
-Describe what this plugin does and how to configure it.
+让猫娘知道你现在在玩哪款游戏，然后换用那款游戏的语境与术语陪你聊。
+
+A companion plugin that switches game context and terminology on demand.
+
+## 它做什么 / What it does
+
+- 登记当前在玩的游戏（原神、鸣潮，可自行扩展）
+- 加载该游戏的术语库（`terms/<game>/`，四个维度：core / slang / characters / systems）
+- 把一段小语境注入宿主 LLM 上下文（`visibility=[]` + `ai_behavior="read"`，不打断对话）
+- 模型按需查术语（`lookup_game_term`），且严格限定在当前游戏内
+- 切换游戏时卸载旧索引、加载新索引
+
+## 它不做什么 / What it does not do
+
+- 不检测游戏（不看窗口标题、不扫进程、不截图、不读内存）
+- 不操作游戏、不做决策、不自行调用 LLM、不发任何网络请求
+- 不读宿主的 `bus`（conversations / frames 属隐私面）
+
+## 入口与工具 / Entries and tools
+
+| 类型 | id | 说明 |
+|---|---|---|
+| entry | `set_game` | 登记 / 切换当前游戏 |
+| entry | `get_current_game` | 查看当前登记的游戏 |
+| entry | `list_games` | 列出可用游戏 |
+| entry | `refresh_game_context` | 重新注入语境（并重新读一遍术语覆盖层） |
+| llm tool | `set_current_game` | 对话里说"我在玩 XX"时由模型调用 |
+| llm tool | `lookup_game_term` | 按需查术语，只查当前游戏 |
+
+## 配置 / Configuration
+
+插件清单里的 `[multi_game_companion]` 与 `[games.*]` 都可以被用户运行配置覆盖：
+
+```text
+<用户数据根目录>/plugins/multi_game_companion/config/plugin.toml   # 登记 / 调整游戏
+<用户数据根目录>/plugins/multi_game_companion/data/terms/<游戏>/   # 覆盖术语（按 key 逐字段合并）
+```
+
+面向用户的使用说明见 `docs/quickstart.md`（会显示在插件管理器的指南页）。
 
 ## Development
 

@@ -16,3 +16,4 @@ store.db
 # pytest 的 tmp_path 在部分沙箱/托管环境下不可写，只能落在插件目录内。
 .pytest-tmp/
 .idea/
+.pytest-tmp/

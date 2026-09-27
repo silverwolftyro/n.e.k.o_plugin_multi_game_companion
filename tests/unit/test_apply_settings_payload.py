@@ -13,7 +13,6 @@ import inspect
 from unittest.mock import MagicMock
 
 import pytest
-
 from plugin.plugins.multi_game_companion import MultiGameCompanionPlugin
 from plugin.plugins.multi_game_companion.game_registry import PluginOptions
 

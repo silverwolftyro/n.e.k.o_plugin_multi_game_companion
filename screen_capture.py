@@ -158,9 +158,9 @@ def _enum_large_visible_windows() -> list[dict]:
             rect = win32gui.GetWindowRect(hwnd)
             if not rect:
                 return True
-            l, t, r, b = rect
-            w = int(r) - int(l)
-            h_ = int(b) - int(t)
+            left, top_, right, bottom = rect
+            w = int(right) - int(left)
+            h_ = int(bottom) - int(top_)
             if w < 500 or h_ < 400:
                 return True
             title = win32gui.GetWindowText(hwnd) or ""
@@ -199,8 +199,8 @@ def find_foreground_window() -> Optional[dict]:
                 title = win32gui.GetWindowText(hwnd) or ""
                 _tid, pid = win32gui.GetWindowThreadProcessId(hwnd)
                 rect = win32gui.GetWindowRect(hwnd)
-                l, t, r, b = (rect or (0, 0, 0, 0))
-                if int(r) > int(l) and int(b) > int(t):
+                left, top_, right, bottom = (rect or (0, 0, 0, 0))
+                if int(right) > int(left) and int(bottom) > int(top_):
                     return {"hwnd": hwnd, "pid": pid, "title": title, "rect": tuple(rect)}
             except Exception:
                 pass
@@ -220,6 +220,7 @@ def _capture_printwindow(hwnd: Any, rect: Any) -> CaptureResult:
     try:
         import ctypes
         from ctypes import wintypes
+
         from PIL import Image  # lazy: 第三方
 
         user32 = ctypes.windll.user32

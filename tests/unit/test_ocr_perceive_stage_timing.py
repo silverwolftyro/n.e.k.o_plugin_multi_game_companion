@@ -19,7 +19,6 @@ import threading
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from plugin.plugins.multi_game_companion import MultiGameCompanionPlugin
 from plugin.plugins.multi_game_companion.game_registry import PluginOptions
 
@@ -87,7 +86,6 @@ async def test_ocr_perceive_body__logs_body_enter_and_body_exit() -> None:
     async def _capture_returns_fail():
         return (CaptureResult(False, None, 0, 0, "", "no_window", -1.0), "foreground")
     # patch asyncio.to_thread 来拦截 capture_active_frame
-    import asyncio
     orig_to_thread = asyncio.to_thread
 
     async def _fake_to_thread(fn, *args, **kwargs):
@@ -127,7 +125,6 @@ async def test_ocr_perceive_body__stage_capture_done_logged() -> None:
     from plugin.plugins.multi_game_companion.screen_capture import CaptureResult
 
     # patch asyncio.to_thread
-    import asyncio
     orig_to_thread = asyncio.to_thread
 
     async def _fake_to_thread(fn, *args, **kwargs):
@@ -165,7 +162,6 @@ async def test_ocr_perceive_body__stage_ocr_done_logged() -> None:
     from plugin.plugins.multi_game_companion.screen_capture import CaptureResult
 
     # patch capture + OCR（OCR 返回非空文本避免 black_frame early-return）
-    import asyncio
     orig_to_thread = asyncio.to_thread
 
     async def _fake_to_thread(fn, *args, **kwargs):
@@ -216,7 +212,6 @@ async def test_ocr_perceive_body__stage_detect_done_logged() -> None:
 
     from plugin.plugins.multi_game_companion.screen_capture import CaptureResult
 
-    import asyncio
     orig_to_thread = asyncio.to_thread
 
     async def _fake_to_thread(fn, *args, **kwargs):

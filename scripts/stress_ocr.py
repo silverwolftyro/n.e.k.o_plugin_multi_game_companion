@@ -24,9 +24,10 @@ import asyncio
 import json
 import signal
 import sys
-import time
 import threading
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutTimeout
+import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutTimeout
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -36,12 +37,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 PLUGIN_DIR = REPO_ROOT / "plugin" / "plugins" / "multi_game_companion"
 sys.path.insert(0, str(REPO_ROOT))
 
-from plugin.plugins.multi_game_companion.screen_capture import (
+from plugin.plugins.multi_game_companion.ocr_engine import OcrEngine  # noqa: E402
+from plugin.plugins.multi_game_companion.screen_capture import (  # noqa: E402
     CaptureResult,
     capture_active_frame,
 )
-from plugin.plugins.multi_game_companion.ocr_engine import OcrEngine
-
 
 # =============================================================================
 # Metrics
@@ -243,8 +243,7 @@ class StressRunner:
                     continue
 
                 dt = time.monotonic() - iter_start
-                # 隐私：text 不进日志，只记长度 + 80 字样本
-                sample = text[:80] if isinstance(text, str) else ""
+                # 隐私：text 不进日志，只记长度
                 self.metrics.add_success(dt, capture_ok=result.ok, text_len=len(text) if isinstance(text, str) else 0)
 
                 if self._stop_event.is_set() or time.monotonic() >= deadline:

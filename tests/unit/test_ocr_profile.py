@@ -9,13 +9,7 @@
 from __future__ import annotations
 
 import pytest
-
 from plugin.plugins.multi_game_companion import _detect_profile_from_system
-from plugin.plugins.multi_game_companion.game_registry import (
-    OCR_PROFILE_DEFAULTS,
-    OCR_PROFILES,
-    PluginOptions,
-)
 
 
 @pytest.mark.unit

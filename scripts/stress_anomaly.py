@@ -21,20 +21,17 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Callable
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from plugin.plugins.multi_game_companion.screen_capture import (
+from plugin.plugins.multi_game_companion.screen_capture import (  # noqa: E402
     CaptureResult,
     capture_active_frame,
     is_black_frame,
@@ -75,8 +72,8 @@ def scenario_mss_permission_error() -> ScenarioResult:
     baseline = _rss_mb()
 
     # patch mss 模块让 mss.mss() 抛 PermissionError
-    import plugin.plugins.multi_game_companion.screen_capture as sc
     import mss as mss_mod  # type: ignore[import-untyped]
+    import plugin.plugins.multi_game_companion.screen_capture as sc
 
     original_mss = mss_mod.mss
     def _boom():

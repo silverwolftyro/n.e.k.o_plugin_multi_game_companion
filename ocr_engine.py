@@ -4,7 +4,6 @@ from __future__ import annotations
 import base64
 import io
 import re
-from typing import Any
 
 # Windows OCR 会在汉字之间插空格，这个正则把它们去掉（保留中英之间的空格）
 _HAN_SPACE_RE = re.compile(r"(?<=[\u4e00-\u9fff])[ \t]+(?=[\u4e00-\u9fff])")
@@ -26,8 +25,8 @@ class OcrEngine:
     def _ensure_engine(self):
         if self._engine is not None:
             return self._engine
-        from winrt.windows.media.ocr import OcrEngine as WinOcrEngine
         from winrt.windows.globalization import Language
+        from winrt.windows.media.ocr import OcrEngine as WinOcrEngine
 
         engine = WinOcrEngine.try_create_from_user_profile_languages()
         if engine is None:
@@ -58,8 +57,8 @@ class OcrEngine:
             return False
 
     async def _pil_to_software_bitmap(self, pil_img):
-        from winrt.windows.storage.streams import DataWriter, InMemoryRandomAccessStream
         from winrt.windows.graphics.imaging import BitmapDecoder
+        from winrt.windows.storage.streams import DataWriter, InMemoryRandomAccessStream
 
         buf = io.BytesIO()
         pil_img.save(buf, format="PNG")

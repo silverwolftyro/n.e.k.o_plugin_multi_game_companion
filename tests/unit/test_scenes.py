@@ -13,7 +13,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from plugin.plugins.multi_game_companion.scene_store import load_scenes
 
 

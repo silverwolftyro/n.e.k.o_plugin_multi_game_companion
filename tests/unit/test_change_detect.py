@@ -10,7 +10,6 @@ S1 整体行为（轻量帧抓取 + tick 决策）在集成测试里覆盖；这
 from __future__ import annotations
 
 import pytest
-
 from plugin.plugins.multi_game_companion import MultiGameCompanionPlugin
 
 

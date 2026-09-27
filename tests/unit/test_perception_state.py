@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import replace
 from typing import Any
 
-from conftest import build_plugin, make_config
+from conftest import make_config
 from plugin.plugins.multi_game_companion import MultiGameCompanionPlugin
 from plugin.plugins.multi_game_companion.game_registry import GameRegistry
 from plugin.plugins.multi_game_companion.term_store import TermEntry, TermLibrary

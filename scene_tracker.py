@@ -19,6 +19,7 @@ from __future__ import annotations
 import enum
 import time
 from dataclasses import dataclass
+from typing import Callable
 
 
 class SceneEventType(enum.Enum):
@@ -65,7 +66,7 @@ class SceneTracker:
         hysteresis_count: int = 3,
         exit_grace_count: int = 5,
         debounce_seconds: float = 10.0,
-        clock: "() -> float" = time.monotonic,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._hysteresis_count = max(1, hysteresis_count)
         self._exit_grace_count = max(1, exit_grace_count)

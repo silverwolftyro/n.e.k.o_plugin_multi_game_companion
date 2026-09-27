@@ -20,13 +20,11 @@ import gc
 import threading
 import time
 from concurrent.futures import Future as ConcurrentFuture
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
-
 from plugin.plugins.multi_game_companion import MultiGameCompanionPlugin
 from plugin.plugins.multi_game_companion.game_registry import PluginOptions
-
 
 # =============================================================================
 # 加速器：把 60s 看门狗 + mss/winrt sleep 压成 ~0.05s

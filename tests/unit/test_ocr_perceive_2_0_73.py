@@ -14,16 +14,13 @@
 """
 from __future__ import annotations
 
-import asyncio
 import threading
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from plugin.plugins.multi_game_companion import MultiGameCompanionPlugin
 from plugin.plugins.multi_game_companion.game_registry import PluginOptions
 from plugin.plugins.multi_game_companion.scene_tracker import SceneTracker
-
 
 # ============================================================================
 # Stub 工厂

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import time
+from typing import Iterable
 
 #: 同时最多激活的术语数（含核心层）。拍板 2.0.56：核心层典型 20-35 条，留 40 作缓冲。
 MAX_ACTIVE = 40

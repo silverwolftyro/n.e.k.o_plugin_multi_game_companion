@@ -12,7 +12,6 @@
 from __future__ import annotations
 
 import pytest
-
 from plugin.plugins.multi_game_companion.scene_tracker import (
     SceneEventType,
     SceneTracker,

@@ -51,20 +51,24 @@ from plugin.sdk.plugin import (
     ui,
 )
 
+from .activation import ActivationState
 from .context_pack import (
     build_context_block,
     build_lookup_block,
     render_term_card,
 )
 from .game_registry import (
-    GameEntry,
-    GameRegistry,
     OCR_PROFILE_DEFAULTS,
     OCR_PROFILES,
+    GameEntry,
+    GameRegistry,
     PluginOptions,
     _clean_profile,
     as_section,
 )
+from .ocr_engine import OcrEngine
+from .scene_store import SceneEntry, load_scenes
+from .screen_capture import capture_active_frame, is_black_frame
 from .session import (
     GameSession,
     GameSessionManager,
@@ -72,10 +76,6 @@ from .session import (
     SessionPersistence,
     SwitchResult,
 )
-from .ocr_engine import OcrEngine
-from .activation import ActivationState
-from .scene_store import SceneEntry, load_scenes
-from .screen_capture import capture_active_frame, is_black_frame
 from .term_store import CORE_LAYER_DIMENSIONS, TermEntry, TermLibrary, TermLoadError, load_library
 
 
@@ -1755,7 +1755,6 @@ class MultiGameCompanionPlugin(NekoPluginBase):
         with self._state_lock:
             old_keys = set(self._activation.get_active_keys())
             self._activation.activate_terms(matched, source="query", ttl_seconds=float(self._options.query_activation_ttl_seconds))
-            new_keys = set(self._activation.get_active_keys())
         newly = [k for k in matched if k not in old_keys]
         self.logger.info(
             "multi_game_companion: on_chat_message query-activate keys={} count={}",
@@ -2144,7 +2143,7 @@ class MultiGameCompanionPlugin(NekoPluginBase):
                 with self._state_lock:
                     self._update_perception_state(self._last_ocr_hit)
                 # 即便文本未变，也要做 SceneTracker 状态推进（防 stuck）
-                self._scene_tracker.update([])  # noqa: 让 exit_grace_count 推进
+                self._scene_tracker.update([])  # 让 exit_grace_count 推进
                 # 拍板 2.0.73：早退也打 INFO——文本未变是合法跳过，但 2.0.72 真机 3 分钟
                 # 没 body_exit 日志时无法区分"卡死"和"OCR 一直返回同一帧"——必须留痕。
                 self.logger.info(
@@ -2364,7 +2363,6 @@ class MultiGameCompanionPlugin(NekoPluginBase):
         if library is None:
             return False
 
-        entry = self._registry.get(session.game_id)
         activated_text = self._build_activated_context(session)
         activated_lines = [line for line in activated_text.split("\n") if line] if activated_text else []
 

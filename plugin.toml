@@ -1,5 +1,5 @@
 # =============================================================================
-# multi_game_companion — 多游戏通用陪聊（L1 MVP）
+# multi_game_companion — 原神游戏搭子（L1 MVP）
 # -----------------------------------------------------------------------------
 # 范围：仅做四件事
 #   ① 用户/模型声明"我现在在玩 XX 游戏"
@@ -18,7 +18,7 @@
 
 [plugin]
 id = "multi_game_companion"
-name = "多游戏陪玩"
+name = "原神游戏搭子"
 type = "plugin"
 
 description = "陪伴你玩多款游戏：登记当前在玩的游戏后，自动切换到对应的游戏语境与术语库，用正确的术语陪聊、解闷、哄人。支持原神、鸣潮等；也可以由猫娘在对话里识别并登记。不读取游戏数据、不修改游戏、不做任何自动化操作。"
@@ -90,7 +90,7 @@ enabled = true
 
 [[plugin.ui.panel]]
 id = "settings"
-title = "多游戏陪玩设置"
+title = "原神游戏搭子设置"
 entry = "ui/panel.tsx"
 mode = "hosted-tsx"
 context = "settings"

@@ -1,4 +1,4 @@
-"""multi_game_companion —— 多游戏通用陪聊（L1 MVP）
+"""multi_game_companion —— 原神游戏搭子（L1 MVP）
 
 范围（只做四件事）：
   ① 声明"我现在在玩 XX 游戏"  ② 加载该游戏的术语库
@@ -140,7 +140,7 @@ _DESKTOP_MARKERS_BUILTIN: tuple[str, ...] = (
 
 @neko_plugin
 class MultiGameCompanionPlugin(NekoPluginBase):
-    """多游戏通用陪聊插件。
+    """原神游戏搭子插件。
 
     职责边界（L1 MVP）：登记当前游戏 → 加载术语库 → 注入语境 → 支持切换。
     不做游戏检测、不做动作操作、不做决策层、不自行调用 LLM。
@@ -532,7 +532,7 @@ class MultiGameCompanionPlugin(NekoPluginBase):
     # 应用动作：apply_settings（校验 + 写回 + 必要时重建 executor）
     # ==================================================================
 
-    @ui.context(id="settings", title="多游戏陪玩设置")
+    @ui.context(id="settings", title="原神游戏搭子设置")
     async def _ui_settings_context(self) -> dict[str, Any]:
         """拍板 2.0.66：面板加载时调用，返回 8 项配置 + 元数据（含 ocr_profile）。
 

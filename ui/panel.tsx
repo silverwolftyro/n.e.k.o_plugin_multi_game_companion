@@ -348,7 +348,7 @@ export default function MultiGameCompanionPanel(
           </div>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700, color: THEME.text }}>
-              多游戏陪玩
+              原神游戏搭子
             </div>
             <div style={{ fontSize: 12, color: THEME.textMuted, marginTop: 2 }}>
               感知与激活参数 · 按需权衡转场响应 ↔ CPU

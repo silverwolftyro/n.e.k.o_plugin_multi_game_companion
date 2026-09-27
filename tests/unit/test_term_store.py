@@ -115,6 +115,8 @@ def test_terms__real_tree__no_unknown_dimension_files() -> None:
         if not game_dir.is_dir():
             continue
         for path in game_dir.glob("*.toml"):
+            if path.stem == "scenes":
+                continue  # scenes.toml is scene definition, not a term dimension
             assert path.stem in DIMENSIONS, f"unexpected dimension file: {path}"
 
 

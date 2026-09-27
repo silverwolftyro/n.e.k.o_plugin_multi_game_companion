@@ -55,11 +55,24 @@ def test_options__defaults_match_manifest() -> None:
     options = PluginOptions()
     assert options.default_game == ""
     assert options.auto_restore_last_game is True
-    assert options.context_inject_max_terms == 5
+    assert options.context_inject_max_terms == 40
     assert options.max_context_chars == 800
     assert options.lookup_max_matches == 3
     assert options.lookup_max_chars_per_term == 200
     assert options.reinject_every_n_messages == 0
+    # 拍板 2.0.64 + 2.0.65 + 2.0.66 + 2.0.67：11 个新可调项默认值
+    assert options.ocr_profile == "auto"
+    assert options.ocr_perceive_interval_seconds == 15
+    assert options.ocr_worker_threads == 1
+    assert options.screen_activation_limit == 12
+    assert options.query_activation_ttl_seconds == 300
+    assert options.scene_prompt_reinject_seconds == 0
+    # 拍板 2.0.70：S1 change_driven_enabled 默认改 false——S1 真机连续 worker 卡死，默认关回到 2.0.66 稳定行为
+    assert options.change_driven_enabled is False
+    assert options.change_detect_threshold == 8
+    assert options.scene_switch_cooldown_seconds == 30
+    assert options.desktop_markers_enabled is True
+    assert options.desktop_markers_extra == ()
 
 
 @pytest.mark.unit
@@ -73,6 +86,17 @@ def test_options__every_key_is_read_and_changes_behaviour() -> None:
             "lookup_max_matches": 1,
             "lookup_max_chars_per_term": 50,
             "reinject_every_n_messages": 3,
+            "ocr_profile": "performance",
+            "ocr_perceive_interval_seconds": 60,
+            "ocr_worker_threads": 2,
+            "screen_activation_limit": 5,
+            "query_activation_ttl_seconds": 120,
+            "scene_prompt_reinject_seconds": 600,
+            "change_driven_enabled": False,
+            "change_detect_threshold": 4,
+            "scene_switch_cooldown_seconds": 60,
+            "desktop_markers_enabled": False,
+            "desktop_markers_extra": ["Steam", "Discord"],
         }
     )
     assert options.default_game == "genshin"
@@ -82,6 +106,18 @@ def test_options__every_key_is_read_and_changes_behaviour() -> None:
     assert options.lookup_max_matches == 1
     assert options.lookup_max_chars_per_term == 50
     assert options.reinject_every_n_messages == 3
+    assert options.ocr_profile == "performance"
+    assert options.ocr_perceive_interval_seconds == 60
+    assert options.ocr_worker_threads == 2
+    assert options.screen_activation_limit == 5
+    assert options.query_activation_ttl_seconds == 120
+    assert options.scene_prompt_reinject_seconds == 600
+    # 拍板 2.0.67：3 个新字段生效
+    assert options.change_driven_enabled is False
+    assert options.change_detect_threshold == 4
+    assert options.scene_switch_cooldown_seconds == 60
+    assert options.desktop_markers_enabled is False
+    assert options.desktop_markers_extra == ("Steam", "Discord")
 
 
 @pytest.mark.unit
@@ -95,6 +131,14 @@ def test_options__bad_types_fall_back_and_out_of_range_is_clamped() -> None:
             "lookup_max_matches": 0,
             "lookup_max_chars_per_term": 10_000,
             "reinject_every_n_messages": -5,
+            "ocr_perceive_interval_seconds": 9999,    # → 300 (high clamp)
+            "ocr_worker_threads": 5,              # → 2 (high clamp)
+            "ocr_profile": "totally_invalid",     # → "auto"（非法值 fallback）
+            "screen_activation_limit": 0,             # → 1 (low clamp)
+            "query_activation_ttl_seconds": 5,        # → 10 (low clamp)
+            "scene_prompt_reinject_seconds": -100,    # → 0 (low clamp)
+            "desktop_markers_enabled": "no",          # → True default（非 bool）
+            "desktop_markers_extra": 42,            # → ()（非 str 非 list）
         }
     )
     assert options.default_game == ""
@@ -104,13 +148,170 @@ def test_options__bad_types_fall_back_and_out_of_range_is_clamped() -> None:
     assert options.lookup_max_matches == 1
     assert options.lookup_max_chars_per_term == 2000
     assert options.reinject_every_n_messages == 0
+    assert options.ocr_perceive_interval_seconds == 300
+    assert options.ocr_worker_threads == 2
+    assert options.ocr_profile == "auto"
+    assert options.screen_activation_limit == 1
+    assert options.query_activation_ttl_seconds == 10
+    assert options.scene_prompt_reinject_seconds == 0
+    assert options.desktop_markers_enabled is True
+    assert options.desktop_markers_extra == ()
+
+
+@pytest.mark.unit
+def test_options__ocr_worker_threads_boundary() -> None:
+    """拍板 2.0.65：worker 数只允许 1 或 2，clamp 严格。"""
+    # 边界值
+    assert PluginOptions.from_section({"ocr_worker_threads": 1}).ocr_worker_threads == 1
+    assert PluginOptions.from_section({"ocr_worker_threads": 2}).ocr_worker_threads == 2
+    # clamp：低于 1 拉到 1；高于 2 降到 2
+    assert PluginOptions.from_section({"ocr_worker_threads": 0}).ocr_worker_threads == 1
+    assert PluginOptions.from_section({"ocr_worker_threads": 3}).ocr_worker_threads == 2
+    assert PluginOptions.from_section({"ocr_worker_threads": -1}).ocr_worker_threads == 1
+    assert PluginOptions.from_section({"ocr_worker_threads": 100}).ocr_worker_threads == 2
+    # 非法类型 → 默认 1
+    assert PluginOptions.from_section({"ocr_worker_threads": "two"}).ocr_worker_threads == 1
+    assert PluginOptions.from_section({"ocr_worker_threads": 1.5}).ocr_worker_threads == 1
+
+
+@pytest.mark.unit
+def test_options__ocr_perceive_interval_seconds_low_clamp_is_3() -> None:
+    """拍板 2.0.65：interval 下限从 5 降到 3（tick 装饰器固定 3s 跑一次）。"""
+    assert PluginOptions.from_section({"ocr_perceive_interval_seconds": 3}).ocr_perceive_interval_seconds == 3
+    # 2 还是被 clamp 到 3（不能再低）
+    assert PluginOptions.from_section({"ocr_perceive_interval_seconds": 2}).ocr_perceive_interval_seconds == 3
+    assert PluginOptions.from_section({"ocr_perceive_interval_seconds": 0}).ocr_perceive_interval_seconds == 3
+
+
+@pytest.mark.unit
+def test_options__ocr_profile__valid_values_accepted() -> None:
+    """拍板 2.0.66：ocr_profile 接受 5 个合法值。"""
+    for v in ("auto", "eco", "balanced", "performance", "custom"):
+        assert PluginOptions.from_section({"ocr_profile": v}).ocr_profile == v
+
+
+@pytest.mark.unit
+def test_options__ocr_profile__invalid_falls_back_to_auto() -> None:
+    """拍板 2.0.66：ocr_profile 非法值（非枚举 / 非字符串 / 空）→ "auto"。"""
+    assert PluginOptions.from_section({"ocr_profile": "TURBO"}).ocr_profile == "auto"
+    assert PluginOptions.from_section({"ocr_profile": ""}).ocr_profile == "auto"
+    assert PluginOptions.from_section({"ocr_profile": 42}).ocr_profile == "auto"
+    assert PluginOptions.from_section({"ocr_profile": None}).ocr_profile == "auto"
+    assert PluginOptions.from_section({}).ocr_profile == "auto"
+
+
+@pytest.mark.unit
+def test_options__ocr_profile__case_insensitive() -> None:
+    """拍板 2.0.66：ocr_profile 大小写不敏感。"""
+    assert PluginOptions.from_section({"ocr_profile": "PERFORMANCE"}).ocr_profile == "performance"
+    assert PluginOptions.from_section({"ocr_profile": "Custom"}).ocr_profile == "custom"
+    assert PluginOptions.from_section({"ocr_profile": "AUTO"}).ocr_profile == "auto"
+
+
+@pytest.mark.unit
+def test_options__ocr_profile_defaults_constant() -> None:
+    """拍板 2.0.66：3 档预设默认值稳定（面板 UI 和 Python 都依赖）。"""
+    from plugin.plugins.multi_game_companion.game_registry import OCR_PROFILE_DEFAULTS
+    assert OCR_PROFILE_DEFAULTS == {
+        "eco":         {"interval": 30, "threads": 1},
+        "balanced":    {"interval": 15, "threads": 1},
+        "performance": {"interval": 8,  "threads": 2},
+    }
+
+
+@pytest.mark.unit
+def test_options__ocr_profile_profiles_constant() -> None:
+    """拍板 2.0.66：5 个合法档位枚举稳定。"""
+    from plugin.plugins.multi_game_companion.game_registry import OCR_PROFILES
+    assert OCR_PROFILES == ("auto", "eco", "balanced", "performance", "custom")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("raw_value,expected", [
+    (1, 1),
+    (8, 8),
+    (64, 64),
+    (0, 1),         # 下界 clamp 到 1
+    (65, 64),       # 上界 clamp 到 64
+    (-5, 1),
+    ("8", 8),       # 字符串 → 8（默认；_clamp_int 不认字符串）
+    (3.7, 8),       # float → fallback 默认 8
+    (None, 8),      # None → fallback 默认 8
+    (True, 8),      # bool → fallback 默认 8（_clamp_int 拒 bool）
+])
+def test_options__change_detect_threshold_clamp(raw_value, expected) -> None:
+    """拍板 2.0.67：change_detect_threshold clamp 到 [1, 64]；非法值 fallback 8。"""
+    options = PluginOptions.from_section({"change_detect_threshold": raw_value})
+    assert options.change_detect_threshold == expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("raw_value,expected", [
+    (10, 10),
+    (30, 30),
+    (300, 300),
+    (9, 10),        # 下界
+    (301, 300),     # 上界
+    (0, 10),
+    (-100, 10),
+])
+def test_options__scene_switch_cooldown_clamp(raw_value, expected) -> None:
+    """拍板 2.0.67：scene_switch_cooldown_seconds clamp 到 [10, 300]。"""
+    options = PluginOptions.from_section({"scene_switch_cooldown_seconds": raw_value})
+    assert options.scene_switch_cooldown_seconds == expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("raw_value,expected", [
+    (True, True),
+    (False, False),
+    ("true", False),   # 非 bool → fallback False（2.0.70 新默认）
+    ("false", False),  # 同上
+    (None, False),
+    (1, False),        # 注意：1 不是 bool（isinstance(1, bool) is False）→ fallback False
+    (0, False),
+])
+def test_options__change_driven_enabled_default(raw_value, expected) -> None:
+    """拍板 2.0.70：change_driven_enabled 非 bool → fallback 默认 False（S1 默认关）。"""
+    options = PluginOptions.from_section({"change_driven_enabled": raw_value})
+    assert options.change_driven_enabled is expected
+
+
+@pytest.mark.unit
+def test_options__scene_switch_cooldown_default_when_missing() -> None:
+    """拍板 2.0.67：scene_switch_cooldown_seconds 缺省 → 30。"""
+    options = PluginOptions.from_section({})
+    assert options.scene_switch_cooldown_seconds == 30
+
+
+@pytest.mark.unit
+def test_options__change_driven_enabled_default_when_missing() -> None:
+    """拍板 2.0.70：change_driven_enabled 缺省 → False（S1 默认关）。"""
+    options = PluginOptions.from_section({})
+    assert options.change_driven_enabled is False
+
+
+@pytest.mark.unit
+def test_options__change_detect_threshold_default_when_missing() -> None:
+    """拍板 2.0.67：change_detect_threshold 缺省 → 8。"""
+    options = PluginOptions.from_section({})
+    assert options.change_detect_threshold == 8
+
+
+@pytest.mark.unit
+def test_options__desktop_markers_extra_normalizes_to_tuple() -> None:
+    """拍板 2.0.64：extra 是 list[str] 配置项，过滤空串/非字符串，归一为 tuple。"""
+    options = PluginOptions.from_section(
+        {"desktop_markers_extra": ["  Steam  ", "", "Discord", 123, None, "VS Code"]}
+    )
+    assert options.desktop_markers_extra == ("Steam", "Discord", "VS Code")
 
 
 @pytest.mark.unit
 def test_options__bool_is_not_accepted_as_int() -> None:
     # bool 是 int 的子类；不显式挡掉，True 会变成 1 条术语上限。
     options = PluginOptions.from_section({"context_inject_max_terms": True})
-    assert options.context_inject_max_terms == 5
+    assert options.context_inject_max_terms == 40
 
 
 @pytest.mark.unit

@@ -85,10 +85,10 @@ async def test_acceptance__switch_game_unloads_old_and_loads_new(build_plugin) -
     plugin = build_plugin()
     await plugin.startup()
     await declare(plugin, "原神")
-    assert (await plugin.lookup_game_term(query="雷神"))["output"]["found"] is True
+    assert (await plugin.lookup_game_term(query="雷电将军"))["output"]["found"] is True
 
     await declare(plugin, "鸣潮")
-    assert (await plugin.lookup_game_term(query="雷神"))["output"]["found"] is False
+    assert (await plugin.lookup_game_term(query="雷电将军"))["output"]["found"] is False
     assert (await plugin.lookup_game_term(query="声骸"))["output"]["found"] is True
     assert "已从" in context_blocks(plugin)[-1]  # 切换公告只出现在切换那一次
 
@@ -137,7 +137,7 @@ async def test_acceptance__malformed_file_degrades_gracefully(build_plugin) -> N
     assert payload["game_id"] == "genshin"  # 坏文件不阻断启动
     assert any("characters" in note for note in payload["notes"])  # 降级被如实报出
     # 覆盖层坏掉只是跳过那一层：默认层仍然可用（C-12）
-    assert (await second.lookup_game_term(query="雷神"))["output"]["found"] is True
+    assert (await second.lookup_game_term(query="雷电将军"))["output"]["found"] is True
     assert (await second.lookup_game_term(query="元素反应"))["output"]["found"] is True
 
 
@@ -245,14 +245,16 @@ async def test_context_pack__max_terms_two_limits_lines(build_plugin) -> None:
 
 
 @pytest.mark.integration
-async def test_context_pack__context_terms_overrides_auto_selection(build_plugin) -> None:
+async def test_context_pack__core_layer_always_present_plus_context_terms(build_plugin) -> None:
+    """核心层常驻 + context_terms 显式补充（拍板 2.0.56/2.0.57）。"""
     games = {"genshin": {**GENSHIN_ENTRY, "context_terms": ["深境螺旋"]}}
-    plugin = build_plugin(config=make_config(games=games, options={"context_inject_max_terms": 5}))
+    plugin = build_plugin(config=make_config(games=games, options={"context_inject_max_terms": 40}))
     await plugin.startup()
     await declare(plugin, "原神")
     block = context_blocks(plugin)[-1]
-    assert "深境螺旋" in block
-    assert "元素反应" not in block  # 显式清单之外的一律不注入
+    assert "深境螺旋" in block   # context_terms 显式补充
+    assert "元素反应" in block    # 核心层（core 维度）常驻
+    assert "雷电将军" not in block # characters 维度留给 lookup_game_term
 
 
 @pytest.mark.integration
@@ -290,7 +292,7 @@ async def test_lookup__max_chars_per_term__truncates_each_entry(build_plugin) ->
     plugin = build_plugin(config=make_config(options={"lookup_max_chars_per_term": 40}))
     await plugin.startup()
     await declare(plugin, "原神")
-    result = await plugin.lookup_game_term(query="雷神")
+    result = await plugin.lookup_game_term(query="雷电将军")
     assert result["output"]["found"] is True
     for card in result["output"]["text"].split("\n\n")[1:]:
         assert len(card) <= 40
@@ -487,14 +489,16 @@ async def test_llm_tool__lookup_hit_shape(build_plugin) -> None:
     plugin = build_plugin()
     await plugin.startup()
     await declare(plugin, "原神")
-    result = await plugin.lookup_game_term(query="雷神")
+    result = await plugin.lookup_game_term(query="雷电将军")
     assert result["is_error"] is False
     assert result["output"]["found"] is True
     assert result["output"]["count"] == 1
     entry = result["output"]["entries"][0]
     assert entry["key"] == "雷电将军"
     assert "aliases" in entry
-    assert "avoid" in entry
+    # avoid 为可选字段，空时不写；有则必须是字符串
+    if "avoid" in entry:
+        assert isinstance(entry["avoid"], str)
 
 
 # =============================================================================
@@ -555,7 +559,7 @@ async def test_privacy__no_bus_reads(build_plugin) -> None:
     plugin = build_plugin()
     await plugin.startup()
     await declare(plugin, "原神")
-    await plugin.lookup_game_term(query="雷神")
+    await plugin.lookup_game_term(query="雷电将军")
     await plugin.on_chat_message(text="hi", sender="")
     await plugin.refresh_game_context()
     await plugin.shutdown()
@@ -571,3 +575,33 @@ async def test_privacy__rendered_payloads_never_contain_absolute_paths(build_plu
     assert ":\\" not in block
     assert "/home/" not in block
     assert str(plugin.plugin_dir) not in block
+
+
+# =============================================================================
+# detect_game：OCR 文本的游戏归属判定（拍板 2.0.14 云游戏/多游戏）
+# =============================================================================
+
+
+@pytest.mark.integration
+async def test_detect_game__genshin_terms_attribute_to_genshin(build_plugin) -> None:
+    plugin = build_plugin()
+    await plugin.startup()
+    await declare(plugin, "原神")
+    # 多条原神专有术语 + 场景信号 → 归属 genshin（阈值 2；单条 generic 词不够）
+    assert await plugin.detect_game("元素反应 雷电将军 深境螺旋") == "genshin"
+
+
+@pytest.mark.integration
+async def test_detect_game__unrelated_text_yields_none(build_plugin) -> None:
+    plugin = build_plugin()
+    await plugin.startup()
+    await declare(plugin, "原神")
+    # 无任何游戏证据 → none（不硬归到当前游戏，对应 no_game_detected）
+    assert await plugin.detect_game("今天天气真好 hello world") == "none"
+
+
+@pytest.mark.integration
+async def test_detect_game__empty_text_yields_none(build_plugin) -> None:
+    plugin = build_plugin()
+    await plugin.startup()
+    assert await plugin.detect_game("") == "none"

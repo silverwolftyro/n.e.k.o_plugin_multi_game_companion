@@ -113,7 +113,24 @@ class OcrEngine:
                 )
 
             return text
-        except Exception:
+        except Exception as exc:
+            # 临时诊断（2.0.18）：暴露被 except 吞掉的异常，便于定位 OCR 静默失败。
+            # 行为不变（仍 return ""），仅加 warning。定位完成后可撤。
+            img_w = 0
+            img_h = 0
+            try:
+                img_w = image.width
+                img_h = image.height
+            except (NameError, AttributeError):
+                pass
+            if self._logger is not None:
+                self._logger.warning(
+                    "OCR failed: {}: {} (lang={}, engine={}, size={}x{})",
+                    type(exc).__name__, exc,
+                    self._language_tag,
+                    "set" if self._engine else "none",
+                    img_w, img_h,
+                )
             return ""
 
     def warmup(self) -> None:

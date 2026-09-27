@@ -33,6 +33,9 @@ DIMENSIONS: tuple[str, ...] = ("core", "characters", "slang", "systems")
 #: 允许进入自动注入语境块的维度（其余维度只在查询时按需返回）。
 CONTEXT_DIMENSIONS: tuple[str, ...] = ("core", "slang")
 
+#: 进游戏时默认常驻上下文的维度（核心层）。characters 留给 lookup_game_term 按需查（拍板 2.0.56）。
+CORE_LAYER_DIMENSIONS: tuple[str, ...] = ("core", "slang", "systems")
+
 #: ``brief`` 的软上限：超过只记 warning，不丢条目（内容质量问题要早暴露）。
 MAX_BRIEF_CHARS = 80
 
@@ -128,6 +131,14 @@ class TermLibrary:
                     push(entry.key)
             for entry in self.entries:
                 if any(normalized in key for key in entry.match_keys()):
+                    push(entry.key)
+            # 拍板 2.0.58：key/alias 是 query 的子串——处理 LLM 传自然语言
+            # （如"纳西妲的角色故事" → 命中"纳西妲"）。key 长度也要求 >= _MIN_PARTIAL_LEN 避免噪声。
+            for entry in self.entries:
+                if any(
+                    len(key) >= _MIN_PARTIAL_LEN and key in normalized
+                    for key in entry.match_keys()
+                ):
                     push(entry.key)
             for entry in self.entries:
                 if normalized in normalize_key(entry.brief):

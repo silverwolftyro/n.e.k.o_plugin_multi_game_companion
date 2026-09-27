@@ -255,8 +255,13 @@ def test_redline__no_reload_lifecycle() -> None:
 @pytest.mark.static
 def test_redline__push_message_v2_only() -> None:
     """KB D5：push_message 只允许 parts + visibility + ai_behavior（+ source/priority/metadata）。"""
+    # 4 个调用点（按行号升序）：
+    #   _push_context                  —— 全量语境块（period/switch 触发）
+    #   _scan_and_activate_query       —— 2.0.59 用户消息命中 → query 术语卡（read）
+    #   ocr_perceive scene-prompt-push —— 2.0.61 场景命中 → 推 prompt（read）
+    #   _push_proactive                —— 场景切换 respond 提示
     sites = calls_to("push_message")
-    assert len(sites) == 1, [f"{module}:{node.lineno}" for module, node in sites]
+    assert len(sites) == 4, [f"{module}:{node.lineno}" for module, node in sites]
     module, node = sites[0]
     names = {kw.arg for kw in node.keywords}
     assert names == {"source", "visibility", "ai_behavior", "parts", "priority", "metadata"}, (
@@ -373,12 +378,18 @@ def test_redline__ui_surfaces_are_declared_and_exist() -> None:
 
 @pytest.mark.static
 def test_redline__no_undeclared_third_party_imports() -> None:
-    """KB D7 相关：第三方依赖必须声明 + vendor；本插件应当零依赖。"""
+    """KB D7 相关：第三方依赖必须声明 + vendor。
+    拍板 2.0.62：允许 winrt-* 前缀（OCR 引擎依赖，pyproject.toml + sync 管理）。"""
     pyproject = tomllib.loads((PLUGIN_DIR / "pyproject.toml").read_text(encoding="utf-8"))
-    assert pyproject["project"]["dependencies"] == []
+    deps = pyproject["project"]["dependencies"]
+    allowed_prefixes = ("winrt-",)
+    for dep in deps:
+        assert any(dep.startswith(p) for p in allowed_prefixes), (
+            f"非白名单依赖：{dep}（仅允许 winrt-* 前缀）"
+        )
 
     stdlib = set(sys.stdlib_module_names)
-    allowed_roots = stdlib | {"plugin", "__future__"}
+    allowed_roots = stdlib | {"plugin", "__future__", "winrt"}
     offenders = []
     for module, tree in _trees().items():
         for node in ast.walk(tree):
@@ -422,8 +433,8 @@ def test_redline__no_import_time_side_effects() -> None:
     raises=AssertionError,
     strict=True,
     reason=(
-        "capture_screen 入口读取 self.bus.frames 用于 OCR 识别，"
-        "这是本插件在 2.0 中声明的正式能力。E-22 扫描本条为例外。"
+        "capture_screen / ocr_screen / ocr_perceive 读取 self.bus.frames 用于屏幕 OCR"
+        "（ocr_perceive 现以主动抓屏为主、bus.frames 为辅助信号）"
     ),
 )
 def test_redline__no_bus_reads_in_source() -> None:
@@ -556,10 +567,6 @@ def test_manifest__games_match_terms_tree() -> None:
 
 @pytest.mark.static
 @pytest.mark.release
-@pytest.mark.xfail(
-    strict=False,
-    reason="plugin.toml [plugin.author].name 仍是占位符 TODO，发布前必须填真实作者名",
-)
 def test_manifest__author_is_filled_at_release() -> None:
     """A-09：作者名不能是占位符。"""
     manifest = tomllib.loads(MANIFEST_TEXT)

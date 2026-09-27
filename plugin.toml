@@ -40,12 +40,12 @@ keywords = [
     "wuthering",
 ]
 
-version = "2.0.0"
+version = "2.0.73"
 entry = "plugin.plugins.multi_game_companion:MultiGameCompanionPlugin"
 
 [plugin.author]
-# TODO: 填写作者名（可选，显示在插件管理器）
-name = "TODO"
+# 作者名（显示在插件管理器）
+name = "silverwolftyro"
 
 # -----------------------------------------------------------------------------
 # SDK 版本窗口
@@ -82,12 +82,19 @@ enabled = true
 auto_start = false
 
 # -----------------------------------------------------------------------------
-# UI —— 只做一个只读 Markdown 快速开始，不做 Hosted TSX 面板
-# guide 不读 Python 状态，因此刻意不写 context（避免要求一个不存在的
-# @ui.context provider）；permissions 保持文档化的 guide 默认值。
+# UI —— quickstart（只读 Markdown）+ 拍板 2.0.65 Hosted UI 参数面板（7 项参数化配置）
+# 面板走 TSX 渲染，每项带性能代价提示；用户可调转场响应 ↔ CPU 权衡。
 # -----------------------------------------------------------------------------
 [plugin.ui]
 enabled = true
+
+[[plugin.ui.panel]]
+id = "settings"
+title = "多游戏陪玩设置"
+entry = "ui/panel.tsx"
+mode = "hosted-tsx"
+context = "settings"
+permissions = ["config:write", "action:call", "state:read"]
 
 [[plugin.ui.guide]]
 id = "quickstart"
@@ -110,8 +117,8 @@ default_game = ""
 # 启动时从 self.store 恢复上次登记的游戏
 auto_restore_last_game = true
 
-# 语境块里自动携带的术语条数上限（从 core.toml + slang.toml 中选取）
-context_inject_max_terms = 5
+# 语境块里自动携带的术语条数上限（核心层：core + slang + systems 维度全部条目；与 MAX_ACTIVE 对齐，拍板 2.0.57）
+context_inject_max_terms = 40
 
 # 语境块字符数硬上限（push_message 的 payload 上限是 512 KiB，这里留三个数量级余量）
 max_context_chars = 800
@@ -125,6 +132,61 @@ lookup_max_chars_per_term = 200
 # P1：每 N 条用户消息重推一次语境块，解决长会话中语境被挤出上下文窗口。
 # 0 = 关闭（MVP 默认关闭）
 reinject_every_n_messages = 0
+
+# 拍板 2.0.64 + 2.0.65 + 2.0.66 + 2.0.67：参数化配置框架——本轮就把所有可调项落地，
+# 代码里读 self._options.xxx，不留 magic number。下面 11 项即使部分只在运行时被消费，
+# 也全部读到并存着——Hosted UI 面板做"读配置→展示→写回"三件事不需要重构。
+
+# OCR 配置档（拍板 2.0.66：自适应 + 预设）
+#   auto = 启动时探测 CPU+内存自动选档（首次安装默认）
+#   eco/balanced/performance = 预设档位（省电/平衡/性能）
+#   custom = 用户手动改了 interval/threads 后自动切到这档
+ocr_profile = "auto"
+
+# OCR 感知周期（秒）。tick 装饰器固定 3s 跑一次；本值控实际 OCR 间隔。
+#   3 = 极限 tick（CPU 约 10% 单核，转场秒响应）
+#  15 = 平衡（默认；CPU 约 2% 单核）
+#  60 = 省 CPU（CPU < 0.5% 单核，转场最慢 1 分钟感知）
+ocr_perceive_interval_seconds = 15
+# 拍板 2.0.71：高频 OCR + 场景状态机
+ocr_scene_interval_seconds = 2  # 场景判定间隔（秒；快，默认 2s）
+ocr_term_interval_seconds = 15  # 术语激活间隔（秒；慢，默认 15s）
+scene_hysteresis_count = 3  # 场景切换滞回次数（连续 N 次同一新场景才算切换）
+
+# OCR worker 线程数（拍板 2.0.65：tick 装饰器 3s + 线程池）
+#   1 = 串行 OCR：上一轮未跑完则跳过本次 tick（最省 CPU）
+#   2 = 允许 2 个 OCR 并发：tick=3-5s 时可堆积，CPU 约 ×1.5
+ocr_worker_threads = 1
+
+# 单次 screen-activate 最多激活几条。↑ 信息多 token 多；↓ 省 token 但可能漏
+screen_activation_limit = 12
+
+# 用户消息命中术语的激活 TTL（秒）。↑ 话题延续久 token 多；↓ 上下文轻盈
+query_activation_ttl_seconds = 300
+
+# scene prompt 重推间隔（秒）。0 = 只推一次；>0 = 每隔 N 秒重推一次（防长对话中 prompt 被挤出）
+scene_prompt_reinject_seconds = 0
+
+# 拍板 2.0.67：S1 变化驱动 OCR（每 3s tick 抓轻量帧做 dHash 对比，差异大则绕过 interval 立即 OCR）
+#   关 = 走老的 interval 节奏（用户嫌迟钝时可关掉试试）
+change_driven_enabled = false  # 拍板 2.0.70：默认关（S1 真机连续 worker 卡死，默认关回到 2.0.66 稳定行为）
+
+# 拍板 2.0.67：S1 轻量帧差异阈值（dHash 16 位汉明距离）。越小越敏感
+#   1  = 几乎任意 UI 变化都触发（极敏感，CPU 升）
+#   8  = 平衡（默认；场景切换 + UI 跳页都能感知）
+#   64 = 几乎不触发（≈关闭）
+change_detect_threshold = 8
+
+# 拍板 2.0.67：S2 场景切换冷却（绕过 300s 全局冷却）
+#   玩家切场景 A→B 后，30s 内再切 B→C 不再立即主动搭话（防刷屏）
+#   同场景内仍走 300s 全局冷却（防同样内容重复推）
+scene_switch_cooldown_seconds = 30
+
+# 是否启用桌面/IDE 反特征黑名单。关 = 桌面/IDE 也可能被判 IN_GAME（不推荐关）
+desktop_markers_enabled = true
+
+# 用户自定义额外桌面特征串（追加到内置表）。空 = 全部用内置；非空 = 追加到内置之后。
+desktop_markers_extra = []
 
 
 # =============================================================================
@@ -150,6 +212,7 @@ reinject_every_n_messages = 0
 display_name = "原神"
 aliases = ["原神", "Genshin", "Genshin Impact", "genshin"]
 terms_dir = "terms/genshin"
+signals = ["原神", "冒险等阶", "原粹树脂", "祈愿", "深境螺旋", "星之归还", "熔铁的孤塞", "原石", "摩拉", "冒险阅历", "纪行", "神之眼", "命之座", "元素力"]
 enabled = true
 # context_terms = ["元素反应", "深境螺旋", "抽卡"]   # 可选：覆盖自动选取
 
@@ -157,6 +220,7 @@ enabled = true
 display_name = "鸣潮"
 aliases = ["鸣潮", "Wuthering Waves", "WuWa", "wuthering"]
 terms_dir = "terms/wuthering_waves"
+signals = ["鸣潮", "数据坞", "声骸", "共鸣者", "索拉"]
 enabled = true
 # context_terms = ["共鸣者", "声骸", "数据坞"]       # 可选：覆盖自动选取
 

@@ -15,7 +15,7 @@
 
   "tools.set_current_game.description": "当用户提到自己正在玩某款游戏时调用，登记当前游戏，之后的陪聊会使用该游戏的语境与术语。",
   "tools.set_current_game.param.game": "游戏名称，可以是用户原话里的说法。",
-  "tools.lookup_game_term.description": "查询当前游戏术语库里的术语。只有在当前登记的游戏范围内查，查不到就如实说没有，不要用别的游戏的知识代替。",
+  "tools.lookup_game_term.description": "查询当前游戏术语库里的具体条目（角色、机制、武器、圣遗物等）。【重要】参数 query 必须传角色名/术语名（如「纳西妲」「深境螺旋」），不要传完整句子。查不到时先用你已有的知识回答，不要只是说「找不到」。",
   "tools.lookup_game_term.param.query": "要查的术语或玩家的说法。",
 
   "errors.unknown_game": "没有找到这款游戏的登记信息。当前可用：{available}",
@@ -39,7 +39,7 @@
   "lookup.entry_line": "【{term}】（{kind}）{brief}",
   "lookup.slang_label": "相关说法：",
   "lookup.avoid_label": "注意不要说：",
-  "lookup.not_found": "当前游戏「{game}」里没有查到相关术语。可以换个说法，或者先确认它是不是这款游戏里的东西。",
+  "lookup.not_found": "当前游戏「{game}」术语库未收录该术语。请用你自己已有的知识回答；如果确实不确定，才建议用户联网搜索。不要凭空编造。",
   "lookup.no_game": "还没有登记游戏，暂时查不到术语。可以在对话里告诉我你在玩什么。",
 
   "status.set_game.done": "已登记当前游戏：{game}（术语 {count} 条）。",
@@ -53,5 +53,9 @@
 
   "terms.load.ok": "术语库加载完成，共 {count} 条。",
   "terms.load.partial": "部分术语文件有问题，已跳过：{dimension}。",
-  "terms.load.empty_dimension": "「{dimension}」这个维度目前没有内容。"
+  "terms.load.empty_dimension": "「{dimension}」这个维度目前没有内容。",
+
+  "perception.proactive_switch": "（你注意到主人 {action}，当前屏幕上出现了这些关键词：{keys}。可以自然地提起这个话题。）",
+  "perception.proactive_no_change": "（你注意到主人还在玩 {game}，屏幕上没有什么新变化。）",
+  "perception.anchors_only": "（当前只有基础锚点激活，暂时没有检测到具体场景。）"
 }

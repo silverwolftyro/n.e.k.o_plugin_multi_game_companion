@@ -1,11 +1,23 @@
 [project]
 name = "multi_game_companion"
-version = "2.0.0"
-dependencies = []
+version = "2.0.73"
+dependencies = [
+    "winrt-runtime==3.2.1",
+    "winrt-Windows-Foundation==3.2.1",
+    "winrt-Windows-Foundation-Collections==3.2.1",
+    "winrt-Windows-Globalization==3.2.1",
+    "winrt-Windows-Graphics-Imaging==3.2.1",
+    "winrt-Windows-Media-Ocr==3.2.1",
+    "winrt-Windows-Storage-Streams==3.2.1",
+]
+authors = [
+    { name = "silverwolftyro" },
+]
 
 [tool.pytest.ini_options]
 # 本插件的测试自带配置：从插件目录直接跑 `pytest tests` 时不必依赖仓库根的 pytest.ini。
 asyncio_mode = "auto"
+norecursedirs = "scene_test_* .pytest-tmp"
 markers = [
     "unit: 纯函数级用例（不构造插件）",
     "integration: 构造真实插件实例的用例",
@@ -13,4 +25,5 @@ markers = [
     "privacy: 隐私边界用例，CI 必跑不可跳",
     "release: 发布前必过",
     "p1: P1 功能用例",
+    "stress: OCR 链路压测（秒级完成，可 -m 'not stress' 排除）",
 ]

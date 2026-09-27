@@ -20,7 +20,7 @@ from plugin.sdk.shared.i18n import PluginI18n
 
 PLACEHOLDER_RE = re.compile(r"\{\{?\s*([A-Za-z_][\w.-]*)\s*\}\}?")
 KEY_RE = re.compile(r"^[a-z_]+(\.[a-z_]+)+$")
-ALLOWED_NAMESPACES = {"entries", "tools", "errors", "context", "lookup", "status", "terms"}
+ALLOWED_NAMESPACES = {"entries", "tools", "errors", "context", "lookup", "status", "terms", "perception"}
 
 #: ``PluginI18n.t(self, key, *, locale=None, default="", **params)`` 的形参名。
 #: 任何叫这些名字的占位符都拿不到实参——``{key}`` 曾经真的踩过这个坑。
@@ -264,7 +264,7 @@ def test_i18n__no_placeholder_like_todo(messages: dict[str, str]) -> None:
 
 @pytest.mark.static
 def test_i18n__total_key_count(messages: dict[str, str]) -> None:
-    assert len(messages) == 49
+    assert len(messages) == 52
 
 
 # =============================================================================
